@@ -117,3 +117,13 @@ review: pasted output into VS code and used default linter to check for syntax e
 checks: pytest tests/test_reflexion.py: all tests passed
 evidence: HANDOUT Part 4
 risk: unexpected edge cases in the reflexion process, such as handling tool call failures, policy violations, and extreme budget conditions
+
+## Entry 8
+
+artifact: agent/server.py, at commit 0b1af5fb450cf42924a30ee20b6cb2655eafdc0e
+tool: Chat GPT Web UI 2026-10-31
+prompts: prompts/server.md
+review: pasted output into VS code and used default linter to check for syntax errors and style issues. Ran tests to ensure they all passed. Ran python -m agent check-mcp to verify the server starts correctly.
+checks: pytest tests/test_server.py: all tests passed
+evidence: HANDOUT Part 5
+risk: unexpected edge cases in the server, such as handling tool call failures, policy violations, and extreme budget conditions
