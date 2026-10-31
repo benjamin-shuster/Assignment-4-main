@@ -107,3 +107,13 @@ review: pasted output into VS code and used default linter to check for syntax e
 checks: pytest tests/test_loop.py: all tests passed
 evidence: HANDOUT Part 3
 risk: unexpected edge cases in the agent loop, such as handling tool call failures, policy violations, and extreme budget conditions
+
+## Entry 7
+
+artifact: agent/reflexion.py, judge, write_lesson and reflexion, at commit 719e5634b32e47f7b2e6f34a0ddc4528a33bd09e
+tool: Chat GPT Web UI 2026-10-31
+prompts: prompts/reflexion.md
+review: pasted output into VS code and used default linter to check for syntax errors and style issues. Ran tests to ensure they all passed.
+checks: pytest tests/test_reflexion.py: all tests passed
+evidence: HANDOUT Part 4
+risk: unexpected edge cases in the reflexion process, such as handling tool call failures, policy violations, and extreme budget conditions
