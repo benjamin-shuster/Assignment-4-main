@@ -275,7 +275,7 @@ class OpenAIProvider:
 
     def _extra(self) -> dict[str, Any]:
         # GPT-5.6 models reject function tools in Chat Completions unless reasoning is off.
-        if self.model.startswith("gpt-5.6"):
+        if self.model.startswith("gpt-"):
             return {"reasoning_effort": "none"}
         return {}
 
