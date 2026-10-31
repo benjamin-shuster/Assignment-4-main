@@ -87,3 +87,13 @@ review: pasted output into VS code and used default linter to check for syntax e
 checks: pytest tests/test_tools.py: all 4 run_tests and format_report tests passed
 evidence: HANDOUT Part 1 step 1
 risk: unexpected edge cases in running tests and formatting reports, such as handling timeouts, partial failures, and large numbers of failing tests
+
+## Entry 5
+
+artifact: agent/policy.py,gate_for, budget_stop, is_stuck, at commit eed6d4247d93294f1fbfea0cd86a1db87ea2bc1a
+tool: Chat GPT Web UI 2026-10-31
+prompts: prompts/policy.md
+review: pasted output into VS code and used default linter to check for syntax errors and style issues. Ran tests to ensure they all passed.
+checks: pytest tests/test_policy.py: all gate_for, budget_stop, and is_stuck tests passed
+evidence: HANDOUT Part 2
+risk: unexpected edge cases in policy enforcement, such as handling unusual tool names, malformed arguments, and extreme budget conditions
