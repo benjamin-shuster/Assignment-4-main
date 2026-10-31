@@ -63,7 +63,17 @@ notes: I chose this model even though the default model is different, because it
 artifact: agent/tools.py, safe_path, at commit d724319c027985155a526872fcd3ae8601476913
 tool: Chat GPT Web UI 2026-10-31
 prompts: prompts/safe_path.md
-review: pasted output into VS code and used default linter to check for syntax errors and style issues
+review: pasted output into VS code and used default linter to check for syntax errors and style issues. Ran tests to ensure they all passed.
 checks: pytest tests/test_tools.py: all 3 safe_path tests passed
 evidence: HANDOUT Part 1 step 1
 risk: unexpected edge cases in path resolution depending on the environment the code is run in
+
+## Entry 3
+
+artifact: agent/tools.py, read_file and edit_file, at commit f5af19487184d8dacdb7e8bf6702194307380ad8
+tool: Chat GPT Web UI 2026-10-31
+prompts: prompts/read_and_edit_file.md
+review: pasted output into VS code and used default linter to check for syntax errors and style issues. Ran tests to ensure they all passed.
+checks: pytest tests/test_tools.py: all 8 read_file and edit_file tests passed
+evidence: HANDOUT Part 1 step 1
+risk: unexpected edge cases in file reading and editing, such as handling line numbers, whitespace, and multiple matches
