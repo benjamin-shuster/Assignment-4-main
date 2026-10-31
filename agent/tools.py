@@ -64,8 +64,28 @@ def workspace() -> Path:
 #     resolved (for example "../judge/acceptance_test.py"), by raising
 #         ToolFailure(f"{path} is outside the project folder. Use a path inside it, such as discounts.py.")
 #   - The workspace folder itself counts as inside.
+
 def safe_path(path: str) -> Path:
-    raise NotImplementedError("Part 1: write safe_path in agent/tools.py")
+    """Resolve a relative path safely within the workspace."""
+    root = workspace()
+    requested = Path(path)
+
+    if requested.is_absolute():
+        raise ToolFailure(
+            f"{path} is outside the project folder. "
+            "Use a path inside it, such as discounts.py."
+        )
+
+    resolved = (root / requested).resolve()
+
+    if not resolved.is_relative_to(root):
+        raise ToolFailure(
+            f"{path} is outside the project folder. "
+            "Use a path inside it, such as discounts.py."
+        )
+
+    return resolved
+
 
 
 def list_files() -> str:
