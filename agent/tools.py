@@ -187,29 +187,49 @@ def edit_file(path: str, old_text: str, new_text: str) -> str:
     return f"Edited {path}: replaced 1 match."
 
 
-# format_report(report) turns a TestReport (agent/testrunner.py) into short text.
-#   - No problems:  f"PASSED: {report.total} of {report.total} tests passed."
-#   - Otherwise the first line is
-#         f"FAILED: {len(report.problems)} of {report.total} tests did not pass."
-#     then one line per problem, in the report's order, at most MAX_PROBLEM_LINES of them:
-#         f"{problem.kind} {problem.name}: {problem.message}"
-#     and, only if some were left out, a last line f"({k} more not shown)".
-#   - Never include anything else: no timings, no tracebacks, no passing tests.
-#     (The stop rule in Part 2 compares two outputs, so the same result must give the same text.)
+
 def format_report(report: TestReport) -> str:
-    raise NotImplementedError("Part 1: write format_report in agent/tools.py")
+    """Format test results as a concise, deterministic summary."""
+    if not report.problems:
+        return f"PASSED: {report.total} of {report.total} tests passed."
+
+    lines = [
+        f"FAILED: {len(report.problems)} of {report.total} tests did not pass."
+    ]
+
+    for problem in report.problems[:MAX_PROBLEM_LINES]:
+        lines.append(
+            f"{problem.kind} {problem.name}: {problem.message}"
+        )
+
+    remaining = len(report.problems) - MAX_PROBLEM_LINES
+    if remaining > 0:
+        lines.append(f"({remaining} more not shown)")
+
+    return "\n".join(lines)
 
 
-# run_tests() runs the unit tests in the workspace's tests/ folder.
-#   - Call run_unittests(workspace(), timeout=TEST_TIMEOUT_SECONDS).
-#   - If the report timed out, raise ToolFailure(
-#         f"The tests did not finish within {TEST_TIMEOUT_SECONDS} seconds. The last edit may "
-#         "have caused an endless loop; read the code you changed.")
-#   - Otherwise return format_report(report). Failing tests are not a tool failure: the
-#     tool worked, and its output says which tests failed.
 def run_tests() -> str:
-    """TODO(Part 1): write this tool's description for the model. See HANDOUT.md, Part 1."""
-    raise NotImplementedError("Part 1: write run_tests in agent/tools.py")
+    """Run the project's unit tests and return a concise summary of the results.
+
+    Use this tool after editing project code to check whether the changes work.
+    The result lists failing tests and their error messages, or confirms that
+    all tests passed. Failing tests are reported normally rather than raising
+    an exception. If execution times out, the tool raises a ToolFailure with
+    guidance to inspect the recently changed code for an endless loop.
+    """
+    report = run_unittests(
+        workspace(),
+        timeout=TEST_TIMEOUT_SECONDS,
+    )
+
+    if report.timed_out:
+        raise ToolFailure(
+            f"The tests did not finish within {TEST_TIMEOUT_SECONDS} seconds. The last edit may "
+            "have caused an endless loop; read the code you changed."
+        )
+
+    return format_report(report)
 
 
 # The tools the agent offers, in this order. Do not rename them.
