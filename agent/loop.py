@@ -39,7 +39,11 @@ NOTES_HEADER = "Notes from earlier runs. Read them before you start:"
 #     That is: BASE_SYSTEM + "\n\n" + NOTES_HEADER + "\n" + notes.strip()
 #   This is long-term memory: the text of NOTES.md, put in front of the model at every start.
 def build_system_prompt(notes: str) -> str:
-    raise NotImplementedError("Part 3: write build_system_prompt in agent/loop.py")
+    if not notes.strip():
+        return BASE_SYSTEM
+
+    return BASE_SYSTEM + "\n\n" + NOTES_HEADER + "\n" + notes.strip()
+
 
 
 # run_agent(...) runs one attempt at the task and returns a RunResult.
@@ -94,4 +98,140 @@ def run_agent(
     notes: str = "",
     attempt: int = 1,
 ) -> RunResult:
-    raise NotImplementedError("Part 3: write run_agent in agent/loop.py")
+    system = build_system_prompt(notes)
+    history = [user_message(task)]
+
+    specs = [
+        spec
+        for spec in toolbox.specs()
+        if gate_for(spec.name, {})[0] != "deny"
+    ]
+
+    steps = 0
+    input_tokens = 0
+    output_tokens = 0
+    last_output = None
+    edits = 0
+
+    def stop(
+        status: str,
+        reason: str,
+        final_text: str = "",
+    ) -> RunResult:
+        trace.stop(
+            attempt=attempt,
+            step=steps,
+            status=status,
+            reason=reason,
+            final_text=final_text,
+            input_tokens=input_tokens,
+            output_tokens=output_tokens,
+        )
+
+        return RunResult(
+            status=status,
+            reason=reason,
+            steps=steps,
+            input_tokens=input_tokens,
+            output_tokens=output_tokens,
+            final_text=final_text,
+            history=history,
+        )
+
+    while True:
+        reason = budget_stop(
+            steps,
+            input_tokens + output_tokens,
+            limits,
+        )
+
+        if reason:
+            return stop("budget", reason)
+
+        try:
+            turn = provider.next_turn(system, history, specs)
+        except AIError as error:
+            return stop("error", str(error))
+
+        steps += 1
+        input_tokens += turn.input_tokens
+        output_tokens += turn.output_tokens
+
+        history.append(turn.message)
+
+        if not turn.tool_calls:
+            return stop(
+                "done",
+                "the model replied without a tool call",
+                turn.text,
+            )
+
+        stuck = False
+
+        for call in turn.tool_calls:
+            decision, why = gate_for(call.name, call.args)
+
+            approved = None
+            approval_reason = ""
+
+            if decision == "deny":
+                ok = False
+                text = f"Refused by policy: {why}"
+
+            elif decision == "ask":
+                preview = toolbox.preview(call.name, call.args)
+
+                if preview is None:
+                    ok, text = toolbox.call(call.name, call.args)
+
+                else:
+                    approved, approval_reason = approve(call, preview)
+
+                    if not approved:
+                        ok = False
+                        text = (
+                            f"A person rejected this {call.name} call. "
+                            f"Reason: {approval_reason}"
+                        )
+                    else:
+                        ok, text = toolbox.call(call.name, call.args)
+
+            else:
+                ok, text = toolbox.call(call.name, call.args)
+
+            history.append(tool_result_message(call, text, ok))
+
+            trace.tool(
+                attempt=attempt,
+                step=steps,
+                thought=turn.text,
+                tool=call.name,
+                input=call.args,
+                gate=decision,
+                approved=approved,
+                reason=(
+                    approval_reason
+                    if approved is False
+                    else ""
+                ),
+                ok=ok,
+                output=text,
+                input_tokens=turn.input_tokens,
+                output_tokens=turn.output_tokens,
+            )
+
+            if ok and call.name == "edit_file":
+                edits += 1
+
+            if ok and call.name == "run_tests":
+                if is_stuck(last_output, text, edits):
+                    stuck = True
+
+                last_output = text
+                edits = 0
+
+        if stuck:
+            return stop(
+                "stuck",
+                "the same tests failed the same way after an edit",
+            )
