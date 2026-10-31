@@ -48,3 +48,22 @@ changed:   wrote "copy it without the line numbers" into the read_file and edit_
 ```
 
 ## My entries
+
+## Entry 1
+
+provider: OpenAI
+model: gpt-6-luna
+price_input_per_mtok: 0.1
+price_output_per_mtok: 0.5
+page: https://platform.openai.com/docs/models/gpt-6-luna
+notes: I chose this model even though the default model is different, because it is cheaper for my use case. I accept all risks associated with using this model for the assignment.
+
+## Entry 2
+
+artifact: agent/tools.py, safe_path, at commit d724319c027985155a526872fcd3ae8601476913
+tool: Chat GPT Web UI 2026-10-31
+prompts: prompts/safe_path.md
+review: pasted output into VS code and used default linter to check for syntax errors and style issues
+checks: pytest tests/test_tools.py: all 3 safe_path tests passed
+evidence: HANDOUT Part 1 step 1
+risk: unexpected edge cases in path resolution depending on the environment the code is run in
