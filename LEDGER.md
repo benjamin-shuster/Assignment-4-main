@@ -97,3 +97,13 @@ review: pasted output into VS code and used default linter to check for syntax e
 checks: pytest tests/test_policy.py: all gate_for, budget_stop, and is_stuck tests passed
 evidence: HANDOUT Part 2
 risk: unexpected edge cases in policy enforcement, such as handling unusual tool names, malformed arguments, and extreme budget conditions
+
+## Entry 6
+
+artifact: agent/loop.py, run_agent and build_system_prompt, at commit 56a171914e3d3d2eb7f426a8abf53617e6484782
+tool: Chat GPT Web UI 2026-10-31
+prompts: prompts/loop.md
+review: pasted output into VS code and used default linter to check for syntax errors and style issues. Ran tests to ensure they all passed.
+checks: pytest tests/test_loop.py: all tests passed
+evidence: HANDOUT Part 3
+risk: unexpected edge cases in the agent loop, such as handling tool call failures, policy violations, and extreme budget conditions
