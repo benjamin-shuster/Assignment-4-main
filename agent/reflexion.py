@@ -42,7 +42,22 @@ In two plain sentences: why did the attempt fail, and what should the next attem
 #                                     f"{TEST_TIMEOUT_SECONDS} seconds.")
 #   - Otherwise return (report.ok, format_report(report)).
 def judge(workspace: Path) -> tuple[bool, str]:
-    raise NotImplementedError("Part 4: write judge in agent/reflexion.py")
+    report = run_unittests(
+        workspace,
+        tests_dir=JUDGE_DIR,
+        timeout=TEST_TIMEOUT_SECONDS,
+        pattern=JUDGE_PATTERN,
+    )
+
+    if report.timed_out:
+        return (
+            False,
+            f"FAILED: the acceptance tests did not finish within "
+            f"{TEST_TIMEOUT_SECONDS} seconds.",
+        )
+
+    return report.ok, format_report(report)
+
 
 
 # write_lesson(provider, task, history, report) asks the model why the attempt failed.
@@ -51,8 +66,24 @@ def judge(workspace: Path) -> tuple[bool, str]:
 #   - The lesson is turn.text on one line: " ".join(turn.text.split()), cut to its first
 #     600 characters.
 #   - Return (lesson, turn.input_tokens, turn.output_tokens). Let AIError propagate.
-def write_lesson(provider: Any, task: str, history: list[dict[str, Any]], report: str) -> tuple[str, int, int]:
-    raise NotImplementedError("Part 4: write write_lesson in agent/reflexion.py")
+def write_lesson(
+    provider: Any,
+    task: str,
+    history: list[dict[str, Any]],
+    report: str,
+) -> tuple[str, int, int]:
+    prompt = LESSON_PROMPT.format(
+        task=task,
+        actions=summarize_actions(history),
+        report=report,
+    )
+
+    turn = provider.complete(LESSON_SYSTEM, prompt)
+
+    lesson = " ".join(turn.text.split())[:600]
+
+    return lesson, turn.input_tokens, turn.output_tokens
+
 
 
 # reflexion(...) runs up to max_attempts attempts and returns a ReflexionResult.
@@ -83,4 +114,91 @@ def reflexion(
     limits: Limits = Limits(),
     max_attempts: int = 2,
 ) -> ReflexionResult:
-    raise NotImplementedError("Part 4: write reflexion in agent/reflexion.py")
+    runs = []
+    lessons = []
+    report = ""
+
+    for attempt in range(1, max_attempts + 1):
+        # Read notes fresh for every attempt.
+        notes = (
+            notes_path.read_text(encoding="utf-8")
+            if notes_path.exists()
+            else ""
+        )
+
+        result = run_agent(
+            task,
+            provider=provider,
+            toolbox=toolbox,
+            approve=approve,
+            trace=trace,
+            limits=limits,
+            notes=notes,
+            attempt=attempt,
+        )
+        runs.append(result)
+
+        # Provider errors should not trigger another attempt.
+        if result.status == "error":
+            return ReflexionResult(
+                False, attempt, runs, lessons, result.reason
+            )
+
+        # Run acceptance tests outside the agent workspace.
+        passed, report = judge(toolbox.workspace)
+
+        trace.judge(
+            attempt=attempt,
+            passed=passed,
+            report=report,
+        )
+
+        if passed:
+            return ReflexionResult(
+                True, attempt, runs, lessons, report
+            )
+
+        # Generate a lesson after every failed attempt,
+        # including the final attempt.
+        try:
+            lesson, input_tokens, output_tokens = write_lesson(
+                provider, task, result.history, report
+            )
+        except AIError:
+            return ReflexionResult(
+                False, attempt, runs, lessons, report
+            )
+
+        # Preserve existing notes and ensure a newline boundary.
+        existing_notes = (
+            notes_path.read_text(encoding="utf-8")
+            if notes_path.exists()
+            else ""
+        )
+
+        prefix = (
+            "\n"
+            if existing_notes and not existing_notes.endswith("\n")
+            else ""
+        )
+
+        entry = (
+            f"- Lesson from {trace.run}, "
+            f"attempt {attempt}: {lesson}\n"
+        )
+
+        with notes_path.open("a", encoding="utf-8") as file:
+            file.write(prefix + entry)
+
+        lessons.append(lesson)
+
+        trace.lesson(
+            attempt=attempt,
+            text=lesson,
+            input_tokens=input_tokens,
+            output_tokens=output_tokens,
+        )
+
+    return ReflexionResult(
+        False, max_attempts, runs, lessons, report
+    )
