@@ -99,39 +99,92 @@ def list_files() -> str:
     return "\n".join(rows) if rows else "(the project folder is empty)"
 
 
-# read_file(path, start=1, limit=80) returns part of one text file, with line numbers.
-#   - Use safe_path. If the path is not a file, raise
-#         ToolFailure(f"{path} is not a file in the project. Call list_files to see the files.")
-#   - If start or limit is less than 1, raise ToolFailure("start and limit must be 1 or more.")
-#   - Never return more than READ_LIMIT_MAX lines, even if limit is larger.
-#   - An empty file returns f"{path} is empty."
-#   - If start is past the last line, raise
-#         ToolFailure(f"{path} has only {n} lines. Use a start between 1 and {n}.")
-#   - Otherwise return, joined with newlines:
-#         a header line           f"{path}, lines {start} to {end} of {n}"
-#         one line per file line  f"{number:>4}: {text}"   (numbers start at 1)
-#         and, only if lines remain after `end`, a last line
-#                                 f"(more below: call read_file with start={end + 1})"
+
 def read_file(path: str, start: int = 1, limit: int = 80) -> str:
-    """TODO(Part 1): write this tool's description for the model. See HANDOUT.md, Part 1."""
-    raise NotImplementedError("Part 1: write read_file in agent/tools.py")
+    """Read numbered lines from a project file, with pagination.
+
+    Use this tool to inspect file contents before making edits.
+    Paths must be relative to the project folder. Line numbers start at 1.
+    """
+    file_path = safe_path(path)
+
+    if not file_path.is_file():
+        raise ToolFailure(
+            f"{path} is not a file in the project. Call list_files to see the files."
+        )
+
+    if start < 1 or limit < 1:
+        raise ToolFailure("start and limit must be 1 or more.")
+
+    lines = file_path.read_text(encoding="utf-8").splitlines()
+    n = len(lines)
+
+    if n == 0:
+        return f"{path} is empty."
+
+    if start > n:
+        raise ToolFailure(
+            f"{path} has only {n} lines. Use a start between 1 and {n}."
+        )
+
+    limit = min(limit, READ_LIMIT_MAX)
+    end = min(start + limit - 1, n)
+
+    output = [f"{path}, lines {start} to {end} of {n}"]
+
+    for number in range(start, end + 1):
+        output.append(f"{number:>4}: {lines[number - 1]}")
+
+    if end < n:
+        output.append(
+            f"(more below: call read_file with start={end + 1})"
+        )
+
+    return "\n".join(output)
 
 
-# edit_file(path, old_text, new_text) replaces old_text with new_text, once, in one file.
-#   - Use safe_path. If the path is not a file, raise the same ToolFailure as read_file.
-#   - If old_text is "", raise ToolFailure(
-#         "old_text is empty. Copy the exact lines you want to replace from read_file, without the line numbers.")
-#   - Count how many times old_text appears in the file.
-#       0 times: raise ToolFailure(f"old_text appears 0 times in {path}. Read the file again with "
-#                                  "read_file and copy the exact text, including its spaces, without the line numbers.")
-#       2 or more: raise ToolFailure(f"old_text appears {count} times in {path}. Include more of the "
-#                                    "surrounding lines so that it appears exactly once.")
-#   - Exactly once: replace it, write the file back as UTF-8 with "\n" line endings, and
-#     return f"Edited {path}: replaced 1 match."
-#   - Change nothing in the file when you raise.
 def edit_file(path: str, old_text: str, new_text: str) -> str:
-    """TODO(Part 1): write this tool's description for the model. See HANDOUT.md, Part 1."""
-    raise NotImplementedError("Part 1: write edit_file in agent/tools.py")
+    """Replace one exact, unique text match in a project file.
+
+    Use read_file first to copy the exact text, including whitespace,
+    without line numbers. The file is changed only if exactly one
+    match exists. Paths must be relative to the project folder.
+    """
+    file_path = safe_path(path)
+
+    if not file_path.is_file():
+        raise ToolFailure(
+            f"{path} is not a file in the project. Call list_files to see the files."
+        )
+
+    if old_text == "":
+        raise ToolFailure(
+            "old_text is empty. Copy the exact lines you want to replace "
+            "from read_file, without the line numbers."
+        )
+
+    content = file_path.read_text(encoding="utf-8")
+    count = content.count(old_text)
+
+    if count == 0:
+        raise ToolFailure(
+            f"old_text appears 0 times in {path}. Read the file again with "
+            "read_file and copy the exact text, including its spaces, "
+            "without the line numbers."
+        )
+
+    if count >= 2:
+        raise ToolFailure(
+            f"old_text appears {count} times in {path}. Include more of the "
+            "surrounding lines so that it appears exactly once."
+        )
+
+    updated = content.replace(old_text, new_text, 1)
+
+    with file_path.open("w", encoding="utf-8", newline="\n") as f:
+        f.write(updated)
+
+    return f"Edited {path}: replaced 1 match."
 
 
 # format_report(report) turns a TestReport (agent/testrunner.py) into short text.
