@@ -1,10 +1,18 @@
 # Assignment 4 Report
 
-Name:
+Name: Benjamin Shuster
 Commit graded:
 
 Answer from your own traces. Give step numbers as `attempt 1, step 4`. Keep to the word
 limits; a short answer with the right evidence earns full points.
+
+## Note from Ben
+I updated the below line so I can use gpt-6-luna ... because I am cheap xD
+See commit bcbafb335624e765378ffb2407fecadfb32c0ba6 for the change.
+```py
+        if self.model.startswith("gpt-"):
+            return {"reasoning_effort": "none"}
+```
 
 ## 1. The runs
 
