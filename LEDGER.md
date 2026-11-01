@@ -127,3 +127,25 @@ review: pasted output into VS code and used default linter to check for syntax e
 checks: pytest tests/test_server.py: all tests passed
 evidence: HANDOUT Part 5
 risk: unexpected edge cases in the server, such as handling tool call failures, policy violations, and extreme budget conditions
+
+## Entry 9
+
+artifact: runs/runA
+tool: my agent (python -m agent run runA), ChatGPT gpt-6-luna, 2026-10-31
+prompts: the default task and BASE_SYSTEM in agent/loop.py;
+review: read every event in trace.jsonl and checked for correctness and adherence to the task requirements.
+checks: python -m agent check-trace runA: complete
+evidence: HANDOUT Part 5
+risk: unexpected behavior in the agent, such as handling tool call failures, policy violations, and extreme budget conditions
+result: success
+
+## Entry 10
+
+artifact: runs/runB
+tool: my agent (python -m agent run runB), ChatGPT gpt-6-luna, 2026-10-31
+prompts: the default task and BASE_SYSTEM in agent/loop.py;
+review: read every event in trace.jsonl and checked for correctness and adherence to the task requirements.
+checks: python -m agent check-trace runB: complete
+evidence: HANDOUT Part 5
+risk: unexpected behavior in the agent, such as handling tool call failures, policy violations, and extreme budget conditions
+result: success
