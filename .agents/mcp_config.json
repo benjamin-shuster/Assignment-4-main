@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "a4-tools": {
+      "command": "/home/ben/code/CS 690/Assignment-4-main/.venv/bin/python",
+      "args": [
+        "/home/ben/code/CS 690/Assignment-4-main/server.py",
+        "--workspace",
+        "runs/terminal/workspace"
+      ]
+    }
+  }
+}
